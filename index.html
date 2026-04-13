@@ -272,7 +272,7 @@
       </div>
     </div>
 
-    <div class="touchHint" id="touchHint">Keyboard: arrows / A D / W / S, Space to drop, P to pause, R to restart.</div>
+    <div class="touchHint" id="touchHint"></div>
   </div>
 
   <script>
@@ -353,6 +353,7 @@
       let offsetY = 0;
       let boardW = 240;
       let boardH = 480;
+      let liquidFalling = false;
 
       function cloneMatrix(m) { return m.map(row => row.slice()); }
 
@@ -407,31 +408,35 @@
             if (by >= 0) board[by][bx] = current.liquid ? -current.color : current.color;
           });
         });
-        if (current.liquid) settleLiquid();
+        if (current.liquid) liquidFalling = true;
       }
 
-      function settleLiquid() {
-        let moved = true;
-        let safety = 0;
-        while (moved && safety < 100) {
-          moved = false;
-          safety++;
-          for (let y = ROWS - 2; y >= 0; y--) {
-            for (let x = 0; x < COLS; x++) {
-              if (board[y][x] >= 0 || board[y][x] === 0) continue;
-              if (board[y + 1][x] === 0) {
-                board[y + 1][x] = board[y][x];
-                board[y][x] = 0;
-                moved = true;
-              }
+      function settleLiquidOnce() {
+        let moved = false;
+        for (let y = ROWS - 2; y >= 0; y--) {
+          for (let x = 0; x < COLS; x++) {
+            const cell = board[y][x];
+            if (cell >= 0 || cell === 0) continue;
+            if (board[y + 1][x] === 0) {
+              board[y + 1][x] = cell;
+              board[y][x] = 0;
+              moved = true;
             }
           }
         }
+        return moved;
+      }
+
+      function settleLiquidToRest() {
+        if (!liquidFalling) return;
+        let guard = 0;
+        while (settleLiquidOnce() && guard < 120) guard++;
         for (let y = 0; y < ROWS; y++) {
           for (let x = 0; x < COLS; x++) {
             if (board[y][x] < 0) board[y][x] = Math.abs(board[y][x]);
           }
         }
+        liquidFalling = false;
       }
 
       function clearLines() {
@@ -510,6 +515,7 @@
 
       function lockPiece() {
         mergePiece();
+        settleLiquidToRest();
         clearLines();
         updateHud();
         spawnPiece();
@@ -551,11 +557,8 @@
 
       function setTouchMode(on) {
         touchMode = on;
-        desktopButtons.classList.toggle('hidden', on);
         touchPad.classList.toggle('show', on);
-        touchHint.textContent = on
-          ? 'Touch mode active. Swipe left/right to move, swipe up to rotate, swipe down to drop.'
-          : 'Keyboard: arrows / A D / W / S, Space to drop, P to pause, R to restart.';
+        touchHint.textContent = '';
         resizeCanvas();
       }
 
@@ -569,6 +572,7 @@
         paused = false;
         gameOver = false;
         nextDrop = 0;
+        liquidFalling = false;
         updateHud();
         hideOverlay();
         spawnPiece();
@@ -618,7 +622,7 @@
         roundRect(px + 2, py + 2, size - 6, size - 6, Math.max(4, size * 0.16));
         ctx.fill();
         if (liquid) {
-          ctx.globalAlpha = 0.2;
+          ctx.globalAlpha = 0.18;
           ctx.fillStyle = '#ffffff';
           roundRect(px + size * 0.2, py + size * 0.62, size * 0.6, size * 0.1, size * 0.06);
           ctx.fill();
@@ -676,30 +680,6 @@
         }
       }
 
-      function settleBoard() {
-        let moved = true;
-        let safety = 0;
-        while (moved && safety < 100) {
-          moved = false;
-          safety++;
-          for (let y = ROWS - 2; y >= 0; y--) {
-            for (let x = 0; x < COLS; x++) {
-              if (board[y][x] >= 0 || board[y][x] === 0) continue;
-              if (board[y + 1][x] === 0) {
-                board[y + 1][x] = board[y][x];
-                board[y][x] = 0;
-                moved = true;
-              }
-            }
-          }
-        }
-        for (let y = 0; y < ROWS; y++) {
-          for (let x = 0; x < COLS; x++) {
-            if (board[y][x] < 0) board[y][x] = Math.abs(board[y][x]);
-          }
-        }
-      }
-
       function tick(time = 0) {
         const delta = time - lastTime;
         lastTime = time;
@@ -709,7 +689,6 @@
             nextDrop = 0;
             if (!move(0, 1)) lockPiece();
           }
-          settleBoard();
         }
         if (touchMoveCooldown > 0) touchMoveCooldown = Math.max(0, touchMoveCooldown - delta);
         drawGrid();
@@ -802,6 +781,45 @@
           move(dx > 0 ? 1 : -1, 0);
           gestureLocked = true;
           touchMoveCooldown = 190;
+          return;
+        }
+
+        if (dy <= -rotateThreshold && absY > absX * 1.2) {
+          tryRotate();
+          gestureLocked = true;
+          touchMoveCooldown = 240;
+          return;
+        }
+
+        if (dy >= dropThreshold && absY > absX * 1.1) {
+          hardDrop();
+          gestureLocked = true;
+          touchMoveCooldown = 260;
+          return;
+        }
+      });
+
+      canvas.addEventListener('pointerup', () => {
+        touchStart = null;
+        gestureLocked = false;
+      });
+
+      canvas.addEventListener('pointercancel', () => {
+        touchStart = null;
+        gestureLocked = false;
+      });
+
+      setTouchMode(false);
+      toggleBackground();
+      resizeCanvas();
+      updateHud();
+      newGame();
+      requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>
+        touchMoveCooldown = 190;
           return;
         }
 
