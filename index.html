@@ -67,7 +67,7 @@
       display: flex;
       flex-direction: column;
       gap: 2px;
-      min-width: 58px;
+      min-width: 56px;
     }
 
     .label {
@@ -203,15 +203,6 @@
       min-width: 0;
     }
 
-    .touchHint {
-      width: min(100%, 760px);
-      text-align: center;
-      font-size: 11px;
-      color: var(--muted);
-      min-height: 14px;
-      flex: 0 0 auto;
-    }
-
     .hidden { display: none !important; }
 
     @media (max-width: 700px) {
@@ -230,7 +221,6 @@
       .topbar { padding: 6px 8px; }
       .value { font-size: 15px; }
       .label { font-size: 9px; }
-      .touchHint { font-size: 10px; }
     }
   </style>
 </head>
@@ -247,6 +237,7 @@
         <button id="paletteBtn">Palette</button>
         <button id="pauseBtn">Pause</button>
         <button id="touchBtn">Touch</button>
+        <button id="controlsBtn">Hide Controls</button>
       </div>
     </div>
 
@@ -271,8 +262,6 @@
         </div>
       </div>
     </div>
-
-    <div class="touchHint" id="touchHint"></div>
   </div>
 
   <script>
@@ -291,9 +280,9 @@
       const paletteBtn = document.getElementById('paletteBtn');
       const pauseBtn = document.getElementById('pauseBtn');
       const touchBtn = document.getElementById('touchBtn');
+      const controlsBtn = document.getElementById('controlsBtn');
       const desktopButtons = document.getElementById('desktopButtons');
       const touchPad = document.getElementById('touchPad');
-      const touchHint = document.getElementById('touchHint');
       const gameWrap = document.getElementById('gameWrap');
       const leftBtn = document.getElementById('leftBtn');
       const rightBtn = document.getElementById('rightBtn');
@@ -345,17 +334,17 @@
       let paused = false;
       let gameOver = false;
       let touchMode = false;
+      let touchControlsVisible = true;
       let touchMoveCooldown = 0;
       let touchStart = null;
       let gestureLocked = false;
       let cellSize = 24;
       let offsetX = 0;
       let offsetY = 0;
-      let boardW = 240;
-      let boardH = 480;
-      let liquidFalling = false;
 
-      function cloneMatrix(m) { return m.map(row => row.slice()); }
+      function cloneMatrix(m) {
+        return m.map(row => row.slice());
+      }
 
       function randomBag() {
         if (bag.length === 0) {
@@ -368,7 +357,9 @@
         return bag.pop();
       }
 
-      function isLiquidSpawn() { return Math.random() < 0.12; }
+      function isLiquidSpawn() {
+        return Math.random() < 0.12;
+      }
 
       function spawnPiece() {
         const piece = randomBag();
@@ -405,38 +396,45 @@
             if (!cell) return;
             const bx = current.x + x;
             const by = current.y + y;
-            if (by >= 0) board[by][bx] = current.liquid ? -current.color : current.color;
+            if (by >= 0) board[by][bx] = current.color;
           });
         });
-        if (current.liquid) liquidFalling = true;
       }
 
-      function settleLiquidOnce() {
-        let moved = false;
-        for (let y = ROWS - 2; y >= 0; y--) {
-          for (let x = 0; x < COLS; x++) {
-            const cell = board[y][x];
-            if (cell >= 0 || cell === 0) continue;
-            if (board[y + 1][x] === 0) {
-              board[y + 1][x] = cell;
-              board[y][x] = 0;
-              moved = true;
-            }
-          }
-        }
-        return moved;
-      }
+      function settleLiquidPiece() {
+        const cells = [];
+        current.matrix.forEach((row, y) => {
+          row.forEach((cell, x) => {
+            if (!cell) return;
+            const bx = current.x + x;
+            const by = current.y + y;
+            if (by >= 0) cells.push({ x: bx, y: by });
+          });
+        });
 
-      function settleLiquidToRest() {
-        if (!liquidFalling) return;
+        const occupied = new Set(cells.map(c => `${c.x},${c.y}`));
+        let moved = true;
         let guard = 0;
-        while (settleLiquidOnce() && guard < 120) guard++;
-        for (let y = 0; y < ROWS; y++) {
-          for (let x = 0; x < COLS; x++) {
-            if (board[y][x] < 0) board[y][x] = Math.abs(board[y][x]);
+
+        while (moved && guard < ROWS * 4) {
+          moved = false;
+          guard++;
+          cells.sort((a, b) => b.y - a.y);
+          for (const cell of cells) {
+            const nextY = cell.y + 1;
+            if (nextY >= ROWS) continue;
+            if (board[nextY][cell.x] !== 0) continue;
+            if (occupied.has(`${cell.x},${nextY}`)) continue;
+            occupied.delete(`${cell.x},${cell.y}`);
+            cell.y = nextY;
+            occupied.add(`${cell.x},${cell.y}`);
+            moved = true;
           }
         }
-        liquidFalling = false;
+
+        for (const cell of cells) {
+          board[cell.y][cell.x] = current.color;
+        }
       }
 
       function clearLines() {
@@ -468,7 +466,9 @@
         const w = matrix[0].length;
         const rotated = Array.from({ length: w }, () => Array(h).fill(0));
         for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) rotated[x][h - 1 - y] = matrix[y][x];
+          for (let x = 0; x < w; x++) {
+            rotated[x][h - 1 - y] = matrix[y][x];
+          }
         }
         return rotated;
       }
@@ -514,8 +514,8 @@
       }
 
       function lockPiece() {
-        mergePiece();
-        settleLiquidToRest();
+        if (current.liquid) settleLiquidPiece();
+        else mergePiece();
         clearLines();
         updateHud();
         spawnPiece();
@@ -536,7 +536,9 @@
         overlay.classList.add('show');
       }
 
-      function hideOverlay() { overlay.classList.remove('show'); }
+      function hideOverlay() {
+        overlay.classList.remove('show');
+      }
 
       function togglePause() {
         if (gameOver) return;
@@ -553,12 +555,17 @@
         canvas.style.background = `linear-gradient(180deg, ${c}33, rgba(255,255,255,0.02))`;
       }
 
-      function togglePalette() { paletteIndex = (paletteIndex + 1) % palettes.length; }
+      function togglePalette() {
+        paletteIndex = (paletteIndex + 1) % palettes.length;
+      }
 
       function setTouchMode(on) {
         touchMode = on;
-        touchPad.classList.toggle('show', on);
-        touchHint.textContent = '';
+        if (touchMode) {
+          touchPad.classList.toggle('show', touchControlsVisible);
+        } else {
+          touchPad.classList.remove('show');
+        }
         resizeCanvas();
       }
 
@@ -572,7 +579,6 @@
         paused = false;
         gameOver = false;
         nextDrop = 0;
-        liquidFalling = false;
         updateHud();
         hideOverlay();
         spawnPiece();
@@ -589,10 +595,8 @@
 
         const scale = Math.min(cssW / 300, cssH / 600);
         cellSize = Math.max(14, Math.floor(30 * scale));
-        boardW = cellSize * COLS;
-        boardH = cellSize * ROWS;
-        cssW = boardW;
-        cssH = boardH;
+        cssW = cellSize * COLS;
+        cssH = cellSize * ROWS;
         offsetX = 0;
         offsetY = 0;
 
@@ -604,7 +608,7 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
 
-      function drawCell(x, y, colorIndex, alpha = 1, liquid = false) {
+      function drawCell(x, y, colorIndex, alpha = 1) {
         const palette = palettes[paletteIndex];
         const color = palette[(colorIndex - 1) % palette.length];
         const px = offsetX + x * cellSize;
@@ -621,12 +625,6 @@
         ctx.fillStyle = grd;
         roundRect(px + 2, py + 2, size - 6, size - 6, Math.max(4, size * 0.16));
         ctx.fill();
-        if (liquid) {
-          ctx.globalAlpha = 0.18;
-          ctx.fillStyle = '#ffffff';
-          roundRect(px + size * 0.2, py + size * 0.62, size * 0.6, size * 0.1, size * 0.06);
-          ctx.fill();
-        }
         ctx.restore();
       }
 
@@ -642,9 +640,10 @@
       }
 
       function drawGrid() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         const w = canvas.clientWidth;
         const h = canvas.clientHeight;
+        ctx.clearRect(0, 0, w, h);
+
         const bg = ctx.createLinearGradient(0, 0, 0, h);
         bg.addColorStop(0, 'rgba(255,255,255,0.04)');
         bg.addColorStop(1, 'rgba(255,255,255,0.02)');
@@ -664,7 +663,7 @@
           for (let x = 0; x < COLS; x++) {
             const cell = board[y][x];
             if (!cell) continue;
-            drawCell(x, y, Math.abs(cell), 1, cell < 0);
+            drawCell(x, y, cell, 1);
           }
         }
 
@@ -674,7 +673,7 @@
               if (!cell) return;
               const bx = current.x + x;
               const by = current.y + y;
-              if (by >= 0) drawCell(bx, by, current.color, 1, current.liquid);
+              if (by >= 0) drawCell(bx, by, current.color, 1);
             });
           });
         }
@@ -697,9 +696,15 @@
 
       function handleKey(e) {
         if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','KeyA','KeyD','KeyS','KeyW','KeyP','KeyR'].includes(e.code)) e.preventDefault();
-        if (e.code === 'KeyR') { newGame(); return; }
+        if (e.code === 'KeyR') {
+          newGame();
+          return;
+        }
         if (gameOver && e.code !== 'KeyR') return;
-        if (e.code === 'KeyP') { togglePause(); return; }
+        if (e.code === 'KeyP') {
+          togglePause();
+          return;
+        }
         if (paused) return;
         switch (e.code) {
           case 'ArrowLeft':
@@ -743,8 +748,16 @@
       paletteBtn.addEventListener('click', togglePalette);
       pauseBtn.addEventListener('click', togglePause);
       touchBtn.addEventListener('click', () => setTouchMode(!touchMode));
+      controlsBtn.addEventListener('click', () => {
+        touchControlsVisible = !touchControlsVisible;
+        controlsBtn.textContent = touchControlsVisible ? 'Hide Controls' : 'Show Controls';
+        if (touchMode) {
+          touchPad.classList.toggle('show', touchControlsVisible);
+        }
+      });
       overlayPrimary.addEventListener('click', () => {
-        if (gameOver) newGame(); else togglePause();
+        if (gameOver) newGame();
+        else togglePause();
       });
       overlayRestart.addEventListener('click', newGame);
 
@@ -818,13 +831,7 @@
     })();
   </script>
 </body>
-</html>
-        touchMoveCooldown = 190;
-          return;
-        }
-
-        if (dy <= -rotateThreshold && absY > absX * 1.2) {
-          tryRotate();
+</html>otate();
           gestureLocked = true;
           touchMoveCooldown = 240;
           return;
