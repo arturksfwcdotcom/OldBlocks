@@ -11,7 +11,6 @@
       --panel: rgba(15, 23, 42, 0.72);
       --text: #e5e7eb;
       --muted: #9ca3af;
-      --accent: #38bdf8;
       --btn: rgba(255,255,255,0.12);
       --btnHover: rgba(255,255,255,0.18);
       --border: rgba(255,255,255,0.15);
@@ -34,62 +33,63 @@
 
     #app {
       width: 100vw;
-      height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px;
+      gap: 8px;
+      padding: 8px;
     }
 
     .topbar {
-      width: min(96vw, 760px);
+      width: min(100%, 760px);
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: space-between;
       align-items: center;
-      background: var(--panel);
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 16px;
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 10px 12px;
+      background: var(--panel);
       backdrop-filter: blur(10px);
+      flex: 0 0 auto;
     }
 
     .stats {
       display: flex;
-      gap: 14px;
+      gap: 10px;
       align-items: center;
       flex-wrap: wrap;
+      min-width: 0;
     }
 
     .stat {
       display: flex;
       flex-direction: column;
       gap: 2px;
-      min-width: 84px;
+      min-width: 58px;
     }
 
     .label {
-      font-size: 11px;
+      font-size: 10px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--muted);
     }
 
     .value {
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 800;
       line-height: 1;
     }
 
     .buttons {
       display: flex;
+      gap: 6px;
       flex-wrap: wrap;
-      gap: 8px;
       justify-content: flex-end;
       align-items: center;
+      min-width: 0;
     }
 
     button {
@@ -97,13 +97,15 @@
       border: 1px solid var(--border);
       background: var(--btn);
       color: var(--text);
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-size: 14px;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.12s ease, background 0.12s ease, opacity 0.2s ease;
       max-width: 100%;
+      min-width: 0;
+      white-space: nowrap;
     }
 
     button:hover { background: var(--btnHover); }
@@ -111,7 +113,7 @@
 
     #gameWrap {
       position: relative;
-      width: min(96vw, 760px);
+      width: min(100%, 760px);
       flex: 1 1 auto;
       min-height: 0;
       display: flex;
@@ -120,13 +122,13 @@
     }
 
     canvas {
+      display: block;
       width: 100%;
       height: 100%;
-      display: block;
-      border-radius: 24px;
+      border-radius: 22px;
       border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
     }
 
     .overlay {
@@ -135,35 +137,36 @@
       display: none;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.4);
-      border-radius: 24px;
-      text-align: center;
-      padding: 24px;
+      background: rgba(0,0,0,0.38);
+      border-radius: 22px;
+      padding: 14px;
+      z-index: 5;
     }
 
     .overlay.show { display: flex; }
 
     .overlayCard {
+      width: min(92vw, 320px);
       background: rgba(15, 23, 42, 0.94);
       border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 22px;
-      padding: 18px 16px;
-      max-width: 320px;
-      width: min(90vw, 320px);
+      border-radius: 18px;
+      padding: 14px;
       display: grid;
       gap: 10px;
       justify-items: center;
+      text-align: center;
     }
 
     .overlayCard h1 {
       margin: 0;
-      font-size: 26px;
+      font-size: 22px;
     }
 
     .overlayCard p {
       margin: 0;
       color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.35;
+      font-size: 13px;
     }
 
     .overlayActions {
@@ -173,34 +176,61 @@
       justify-content: center;
     }
 
+    .touchPad {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      width: min(92vw, 360px);
+      display: none;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      z-index: 6;
+      padding: 8px;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.42);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .touchPad.show { display: grid; }
+
+    .touchBtn {
+      padding: 12px 0;
+      border-radius: 14px;
+      font-size: 20px;
+      line-height: 1;
+      min-width: 0;
+    }
+
     .touchHint {
-      width: min(96vw, 760px);
+      width: min(100%, 760px);
       text-align: center;
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
-      min-height: 16px;
+      min-height: 14px;
+      flex: 0 0 auto;
     }
 
     .hidden { display: none !important; }
 
     @media (max-width: 700px) {
-      .topbar {
-        width: 100%;
-        padding: 10px;
-      }
-      .stats {
-        gap: 10px;
-      }
-      .stat { min-width: 70px; }
-      .value { font-size: 20px; }
-      button { padding: 9px 11px; }
+      #app { padding: 6px; gap: 6px; }
+      .topbar { padding: 7px 8px; border-radius: 14px; }
+      .stat { min-width: 50px; }
+      .value { font-size: 16px; }
+      button { padding: 7px 9px; font-size: 12px; }
+      .buttons { gap: 5px; }
+      .touchPad { width: min(96vw, 340px); bottom: 8px; gap: 6px; }
+      .touchBtn { padding: 11px 0; font-size: 19px; }
     }
 
     @media (orientation: landscape) and (max-height: 560px) {
-      #app { padding: 8px; gap: 8px; }
-      .touchHint { font-size: 11px; }
-      .stat { min-width: 64px; }
-      .value { font-size: 18px; }
+      #app { padding: 5px; gap: 5px; }
+      .topbar { padding: 6px 8px; }
+      .value { font-size: 15px; }
+      .label { font-size: 9px; }
+      .touchHint { font-size: 10px; }
     }
   </style>
 </head>
@@ -208,34 +238,33 @@
   <div id="app">
     <div class="topbar">
       <div class="stats">
-        <div class="stat">
-          <div class="label">Score</div>
-          <div class="value" id="score">0</div>
-        </div>
-        <div class="stat">
-          <div class="label">Lines</div>
-          <div class="value" id="lines">0</div>
-        </div>
-        <div class="stat">
-          <div class="label">Level</div>
-          <div class="value" id="level">1</div>
-        </div>
+        <div class="stat"><div class="label">Score</div><div class="value" id="score">0</div></div>
+        <div class="stat"><div class="label">Lines</div><div class="value" id="lines">0</div></div>
+        <div class="stat"><div class="label">Level</div><div class="value" id="level">1</div></div>
       </div>
       <div class="buttons" id="desktopButtons">
-        <button id="bgBtn">Background</button>
-        <button id="paletteBtn">Block Palette</button>
+        <button id="bgBtn">BG</button>
+        <button id="paletteBtn">Palette</button>
         <button id="pauseBtn">Pause</button>
-        <button id="touchBtn">Touch Mode</button>
+        <button id="touchBtn">Touch</button>
       </div>
     </div>
 
     <div id="gameWrap">
       <canvas id="game"></canvas>
+
+      <div class="touchPad" id="touchPad" aria-label="Touch controls">
+        <button class="touchBtn" id="leftBtn">←</button>
+        <button class="touchBtn" id="rotateBtn">⟳</button>
+        <button class="touchBtn" id="rightBtn">→</button>
+        <button class="touchBtn" id="downBtn">↓</button>
+      </div>
+
       <div class="overlay" id="overlay">
         <div class="overlayCard">
           <h1 id="overlayTitle">Paused</h1>
-          <p id="overlayText">Press Resume to continue.</p>
-          <div class="overlayActions" id="overlayActions">
+          <p id="overlayText">Tap Resume to continue.</p>
+          <div class="overlayActions">
             <button id="overlayPrimary">Resume</button>
             <button id="overlayRestart">New Game</button>
           </div>
@@ -243,7 +272,7 @@
       </div>
     </div>
 
-    <div class="touchHint" id="touchHint">Keyboard: Arrow keys / A D / W / S, Space to drop, P to pause, R for new game.</div>
+    <div class="touchHint" id="touchHint">Keyboard: arrows / A D / W / S, Space to drop, P to pause, R to restart.</div>
   </div>
 
   <script>
@@ -263,8 +292,13 @@
       const pauseBtn = document.getElementById('pauseBtn');
       const touchBtn = document.getElementById('touchBtn');
       const desktopButtons = document.getElementById('desktopButtons');
+      const touchPad = document.getElementById('touchPad');
       const touchHint = document.getElementById('touchHint');
       const gameWrap = document.getElementById('gameWrap');
+      const leftBtn = document.getElementById('leftBtn');
+      const rightBtn = document.getElementById('rightBtn');
+      const rotateBtn = document.getElementById('rotateBtn');
+      const downBtn = document.getElementById('downBtn');
 
       const COLS = 10;
       const ROWS = 20;
@@ -314,17 +348,13 @@
       let touchMoveCooldown = 0;
       let touchStart = null;
       let gestureLocked = false;
-      let liquidStorm = false;
-      let liquidPulse = 0;
-      let cellSize = 30;
+      let cellSize = 24;
       let offsetX = 0;
       let offsetY = 0;
-      let boardW = 300;
-      let boardH = 600;
+      let boardW = 240;
+      let boardH = 480;
 
-      function cloneMatrix(m) {
-        return m.map(row => row.slice());
-      }
+      function cloneMatrix(m) { return m.map(row => row.slice()); }
 
       function randomBag() {
         if (bag.length === 0) {
@@ -337,18 +367,15 @@
         return bag.pop();
       }
 
-      function isLiquidSpawn() {
-        return Math.random() < 0.12;
-      }
+      function isLiquidSpawn() { return Math.random() < 0.12; }
 
       function spawnPiece() {
         const piece = randomBag();
-        const w = piece.shape[0].length;
         current = {
           matrix: piece.shape,
           color: 1 + Math.floor(Math.random() * 8),
           liquid: isLiquidSpawn(),
-          x: Math.floor(COLS / 2) - Math.ceil(w / 2),
+          x: Math.floor(COLS / 2) - Math.ceil(piece.shape[0].length / 2),
           y: -1
         };
         if (collides(current.matrix, current.x, current.y)) {
@@ -386,7 +413,7 @@
       function settleLiquid() {
         let moved = true;
         let safety = 0;
-        while (moved && safety < 80) {
+        while (moved && safety < 100) {
           moved = false;
           safety++;
           for (let y = ROWS - 2; y >= 0; y--) {
@@ -400,10 +427,6 @@
             }
           }
         }
-        clearLiquidMarks();
-      }
-
-      function clearLiquidMarks() {
         for (let y = 0; y < ROWS; y++) {
           for (let x = 0; x < COLS; x++) {
             if (board[y][x] < 0) board[y][x] = Math.abs(board[y][x]);
@@ -440,9 +463,7 @@
         const w = matrix[0].length;
         const rotated = Array.from({ length: w }, () => Array(h).fill(0));
         for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) {
-            rotated[x][h - 1 - y] = matrix[y][x];
-          }
+          for (let x = 0; x < w; x++) rotated[x][h - 1 - y] = matrix[y][x];
         }
         return rotated;
       }
@@ -509,18 +530,13 @@
         overlay.classList.add('show');
       }
 
-      function hideOverlay() {
-        overlay.classList.remove('show');
-      }
+      function hideOverlay() { overlay.classList.remove('show'); }
 
       function togglePause() {
         if (gameOver) return;
         paused = !paused;
-        if (paused) {
-          showOverlay('Paused', 'Tap Resume to continue.', true);
-        } else {
-          hideOverlay();
-        }
+        if (paused) showOverlay('Paused', 'Tap Resume to continue.', true);
+        else hideOverlay();
       }
 
       function toggleBackground() {
@@ -531,21 +547,15 @@
         canvas.style.background = `linear-gradient(180deg, ${c}33, rgba(255,255,255,0.02))`;
       }
 
-      function togglePalette() {
-        paletteIndex = (paletteIndex + 1) % palettes.length;
-      }
+      function togglePalette() { paletteIndex = (paletteIndex + 1) % palettes.length; }
 
       function setTouchMode(on) {
         touchMode = on;
         desktopButtons.classList.toggle('hidden', on);
+        touchPad.classList.toggle('show', on);
         touchHint.textContent = on
-          ? 'Touch mode active: swipe left/right to move, swipe up to rotate, swipe down to drop. Buttons are hidden.'
-          : 'Keyboard: Arrow keys / A D / W / S, Space to drop, P to pause, R for new game.';
-        if (on) {
-          hideOverlay();
-          paused = false;
-          gameOver = false;
-        }
+          ? 'Touch mode active. Swipe left/right to move, swipe up to rotate, swipe down to drop.'
+          : 'Keyboard: arrows / A D / W / S, Space to drop, P to pause, R to restart.';
         resizeCanvas();
       }
 
@@ -566,27 +576,28 @@
 
       function resizeCanvas() {
         const wrap = gameWrap.getBoundingClientRect();
-        const availableW = Math.max(240, wrap.width - 2);
-        const availableH = Math.max(320, wrap.height - 2);
-        const targetRatio = COLS / ROWS;
-        let cssW = availableW;
-        let cssH = availableH;
-        if (cssW / cssH > targetRatio) {
-          cssW = cssH * targetRatio;
-        } else {
-          cssH = cssW / targetRatio;
-        }
-        canvas.style.width = `${Math.floor(cssW)}px`;
-        canvas.style.height = `${Math.floor(cssH)}px`;
+        const availW = Math.max(220, wrap.width - 2);
+        const availH = Math.max(260, wrap.height - 2);
+        const ratio = COLS / ROWS;
+        let cssW = availW;
+        let cssH = availH;
+        if (cssW / cssH > ratio) cssW = cssH * ratio; else cssH = cssW / ratio;
+
+        const scale = Math.min(cssW / 300, cssH / 600);
+        cellSize = Math.max(14, Math.floor(30 * scale));
+        boardW = cellSize * COLS;
+        boardH = cellSize * ROWS;
+        cssW = boardW;
+        cssH = boardH;
+        offsetX = 0;
+        offsetY = 0;
+
+        canvas.style.width = `${Math.max(220, Math.floor(cssW))}px`;
+        canvas.style.height = `${Math.max(260, Math.floor(cssH))}px`;
         const dpr = Math.max(1, window.devicePixelRatio || 1);
         canvas.width = Math.floor(cssW * dpr);
         canvas.height = Math.floor(cssH * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        cellSize = Math.floor(Math.min(cssW / COLS, cssH / ROWS));
-        boardW = cellSize * COLS;
-        boardH = cellSize * ROWS;
-        offsetX = Math.floor((cssW - boardW) / 2);
-        offsetY = Math.floor((cssH - boardH) / 2);
       }
 
       function drawCell(x, y, colorIndex, alpha = 1, liquid = false) {
@@ -598,20 +609,18 @@
         ctx.save();
         ctx.globalAlpha = alpha;
         ctx.fillStyle = color;
-        roundRect(px + 1, py + 1, size - 2, size - 2, Math.max(6, size * 0.22));
+        roundRect(px + 1, py + 1, size - 2, size - 2, Math.max(4, size * 0.22));
         ctx.fill();
-
         const grd = ctx.createLinearGradient(px, py, px + size, py + size);
         grd.addColorStop(0, 'rgba(255,255,255,0.26)');
         grd.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.fillStyle = grd;
-        roundRect(px + 2, py + 2, size - 6, size - 6, Math.max(5, size * 0.18));
+        roundRect(px + 2, py + 2, size - 6, size - 6, Math.max(4, size * 0.16));
         ctx.fill();
-
         if (liquid) {
-          ctx.globalAlpha = 0.22;
+          ctx.globalAlpha = 0.2;
           ctx.fillStyle = '#ffffff';
-          roundRect(px + size * 0.2, py + size * 0.6, size * 0.6, size * 0.12, size * 0.08);
+          roundRect(px + size * 0.2, py + size * 0.62, size * 0.6, size * 0.1, size * 0.06);
           ctx.fill();
         }
         ctx.restore();
@@ -638,8 +647,6 @@
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, w, h);
 
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
         for (let y = 0; y < ROWS; y++) {
           for (let x = 0; x < COLS; x++) {
             const px = offsetX + x * cellSize;
@@ -648,7 +655,6 @@
             ctx.fillRect(px + 1, py + 1, cellSize - 2, cellSize - 2);
           }
         }
-        ctx.restore();
 
         for (let y = 0; y < ROWS; y++) {
           for (let x = 0; x < COLS; x++) {
@@ -673,7 +679,7 @@
       function settleBoard() {
         let moved = true;
         let safety = 0;
-        while (moved && safety < 120) {
+        while (moved && safety < 100) {
           moved = false;
           safety++;
           for (let y = ROWS - 2; y >= 0; y--) {
@@ -697,14 +703,13 @@
       function tick(time = 0) {
         const delta = time - lastTime;
         lastTime = time;
-        liquidPulse += delta;
         if (!paused && !gameOver) {
           nextDrop += delta;
           if (nextDrop > dropInterval) {
             nextDrop = 0;
             if (!move(0, 1)) lockPiece();
           }
-          if (liquidStorm) settleBoard();
+          settleBoard();
         }
         if (touchMoveCooldown > 0) touchMoveCooldown = Math.max(0, touchMoveCooldown - delta);
         drawGrid();
@@ -712,13 +717,8 @@
       }
 
       function handleKey(e) {
-        if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','KeyA','KeyD','KeyS','KeyW','KeyP','KeyR'].includes(e.code)) {
-          e.preventDefault();
-        }
-        if (e.code === 'KeyR') {
-          newGame();
-          return;
-        }
+        if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','KeyA','KeyD','KeyS','KeyW','KeyP','KeyR'].includes(e.code)) e.preventDefault();
+        if (e.code === 'KeyR') { newGame(); return; }
         if (gameOver && e.code !== 'KeyR') return;
         if (e.code === 'KeyP') { togglePause(); return; }
         if (paused) return;
@@ -765,12 +765,14 @@
       pauseBtn.addEventListener('click', togglePause);
       touchBtn.addEventListener('click', () => setTouchMode(!touchMode));
       overlayPrimary.addEventListener('click', () => {
-        if (gameOver) newGame();
-        else togglePause();
+        if (gameOver) newGame(); else togglePause();
       });
       overlayRestart.addEventListener('click', newGame);
 
-      bindHoldButton(document.createElement('button'), () => {});
+      bindHoldButton(leftBtn, () => move(-1, 0));
+      bindHoldButton(rightBtn, () => move(1, 0));
+      bindHoldButton(downBtn, () => move(0, 1));
+      rotateBtn.addEventListener('click', () => tryRotate());
 
       window.addEventListener('keydown', handleKey, { passive: false });
       window.addEventListener('resize', resizeCanvas);
@@ -792,29 +794,28 @@
         const dy = p.y - touchStart.y;
         const absX = Math.abs(dx);
         const absY = Math.abs(dy);
+        const moveThreshold = Math.max(42, cellSize * 1.25);
+        const rotateThreshold = Math.max(70, cellSize * 2.2);
+        const dropThreshold = Math.max(80, cellSize * 2.6);
 
-        const moveThreshold = Math.max(34, cellSize * 0.95);
-        const rotateThreshold = Math.max(58, cellSize * 1.7);
-        const dropThreshold = Math.max(64, cellSize * 2.0);
-
-        if (absX >= moveThreshold && absX > absY * 1.25) {
+        if (absX >= moveThreshold && absX > absY * 1.4) {
           move(dx > 0 ? 1 : -1, 0);
           gestureLocked = true;
-          touchMoveCooldown = 180;
+          touchMoveCooldown = 190;
           return;
         }
 
-        if (dy <= -rotateThreshold && absY > absX * 1.15) {
+        if (dy <= -rotateThreshold && absY > absX * 1.2) {
           tryRotate();
           gestureLocked = true;
-          touchMoveCooldown = 220;
+          touchMoveCooldown = 240;
           return;
         }
 
-        if (dy >= dropThreshold && absY > absX * 1.05) {
+        if (dy >= dropThreshold && absY > absX * 1.1) {
           hardDrop();
           gestureLocked = true;
-          touchMoveCooldown = 240;
+          touchMoveCooldown = 260;
           return;
         }
       });
