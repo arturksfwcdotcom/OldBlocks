@@ -44,10 +44,10 @@
     }
 
     .topbar {
-      width: min(96vw, 520px);
+      width: min(96vw, 760px);
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
       justify-content: space-between;
       align-items: center;
       background: var(--panel);
@@ -89,6 +89,7 @@
       flex-wrap: wrap;
       gap: 8px;
       justify-content: flex-end;
+      align-items: center;
     }
 
     button {
@@ -102,6 +103,7 @@
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.12s ease, background 0.12s ease, opacity 0.2s ease;
+      max-width: 100%;
     }
 
     button:hover { background: var(--btnHover); }
@@ -109,9 +111,12 @@
 
     #gameWrap {
       position: relative;
-      width: min(96vw, 520px);
-      aspect-ratio: 10 / 20;
-      max-height: calc(100vh - 150px);
+      width: min(96vw, 760px);
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     canvas {
@@ -139,15 +144,19 @@
     .overlay.show { display: flex; }
 
     .overlayCard {
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.94);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 22px;
       padding: 18px 16px;
-      max-width: 300px;
+      max-width: 320px;
+      width: min(90vw, 320px);
+      display: grid;
+      gap: 10px;
+      justify-items: center;
     }
 
     .overlayCard h1 {
-      margin: 0 0 8px;
+      margin: 0;
       font-size: 26px;
     }
 
@@ -157,27 +166,15 @@
       line-height: 1.4;
     }
 
-    .touchBar {
-      width: min(96vw, 520px);
-      display: none;
+    .overlayActions {
+      display: flex;
       gap: 8px;
-      justify-content: space-between;
-      align-items: center;
       flex-wrap: wrap;
-    }
-
-    .touchBar.show { display: flex; }
-
-    .touchButton {
-      flex: 1 1 calc(33.333% - 8px);
-      min-width: 92px;
-      padding: 13px 10px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.12);
+      justify-content: center;
     }
 
     .touchHint {
-      width: min(96vw, 520px);
+      width: min(96vw, 760px);
       text-align: center;
       font-size: 12px;
       color: var(--muted);
@@ -185,6 +182,26 @@
     }
 
     .hidden { display: none !important; }
+
+    @media (max-width: 700px) {
+      .topbar {
+        width: 100%;
+        padding: 10px;
+      }
+      .stats {
+        gap: 10px;
+      }
+      .stat { min-width: 70px; }
+      .value { font-size: 20px; }
+      button { padding: 9px 11px; }
+    }
+
+    @media (orientation: landscape) and (max-height: 560px) {
+      #app { padding: 8px; gap: 8px; }
+      .touchHint { font-size: 11px; }
+      .stat { min-width: 64px; }
+      .value { font-size: 18px; }
+    }
   </style>
 </head>
 <body>
@@ -213,25 +230,20 @@
     </div>
 
     <div id="gameWrap">
-      <canvas id="game" width="300" height="600"></canvas>
+      <canvas id="game"></canvas>
       <div class="overlay" id="overlay">
         <div class="overlayCard">
           <h1 id="overlayTitle">Paused</h1>
           <p id="overlayText">Press Resume to continue.</p>
+          <div class="overlayActions" id="overlayActions">
+            <button id="overlayPrimary">Resume</button>
+            <button id="overlayRestart">New Game</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="touchBar" id="touchBar">
-      <button class="touchButton" id="leftBtn">Left</button>
-      <button class="touchButton" id="rotateBtn">Rotate</button>
-      <button class="touchButton" id="rightBtn">Right</button>
-      <button class="touchButton" id="downBtn">Down</button>
-      <button class="touchButton" id="dropBtn">Drop</button>
-      <button class="touchButton" id="pauseBtnTouch">Pause</button>
-    </div>
-
-    <div class="touchHint" id="touchHint">Keyboard: Arrow keys / A D / W / S, Space to drop, P to pause.</div>
+    <div class="touchHint" id="touchHint">Keyboard: Arrow keys / A D / W / S, Space to drop, P to pause, R for new game.</div>
   </div>
 
   <script>
@@ -244,23 +256,18 @@
       const overlay = document.getElementById('overlay');
       const overlayTitle = document.getElementById('overlayTitle');
       const overlayText = document.getElementById('overlayText');
+      const overlayPrimary = document.getElementById('overlayPrimary');
+      const overlayRestart = document.getElementById('overlayRestart');
       const bgBtn = document.getElementById('bgBtn');
       const paletteBtn = document.getElementById('paletteBtn');
       const pauseBtn = document.getElementById('pauseBtn');
       const touchBtn = document.getElementById('touchBtn');
       const desktopButtons = document.getElementById('desktopButtons');
-      const touchBar = document.getElementById('touchBar');
       const touchHint = document.getElementById('touchHint');
-      const leftBtn = document.getElementById('leftBtn');
-      const rightBtn = document.getElementById('rightBtn');
-      const rotateBtn = document.getElementById('rotateBtn');
-      const downBtn = document.getElementById('downBtn');
-      const dropBtn = document.getElementById('dropBtn');
-      const pauseBtnTouch = document.getElementById('pauseBtnTouch');
+      const gameWrap = document.getElementById('gameWrap');
 
       const COLS = 10;
       const ROWS = 20;
-      const BLOCK = 30;
       const board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
       const backgrounds = [
@@ -296,7 +303,7 @@
       let bag = [];
       let current = null;
       let nextDrop = 0;
-      let dropInterval = 800;
+      let dropInterval = 820;
       let lastTime = 0;
       let score = 0;
       let lines = 0;
@@ -306,7 +313,14 @@
       let touchMode = false;
       let touchMoveCooldown = 0;
       let touchStart = null;
-      let touchLast = null;
+      let gestureLocked = false;
+      let liquidStorm = false;
+      let liquidPulse = 0;
+      let cellSize = 30;
+      let offsetX = 0;
+      let offsetY = 0;
+      let boardW = 300;
+      let boardH = 600;
 
       function cloneMatrix(m) {
         return m.map(row => row.slice());
@@ -314,7 +328,7 @@
 
       function randomBag() {
         if (bag.length === 0) {
-          bag = shapes.map((shape, index) => ({ shape: cloneMatrix(shape), color: index + 1 }));
+          bag = shapes.map(shape => ({ shape: cloneMatrix(shape) }));
           for (let i = bag.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [bag[i], bag[j]] = [bag[j], bag[i]];
@@ -323,18 +337,24 @@
         return bag.pop();
       }
 
+      function isLiquidSpawn() {
+        return Math.random() < 0.12;
+      }
+
       function spawnPiece() {
         const piece = randomBag();
+        const w = piece.shape[0].length;
         current = {
           matrix: piece.shape,
-          color: piece.color,
-          x: Math.floor(COLS / 2) - Math.ceil(piece.shape[0].length / 2),
+          color: 1 + Math.floor(Math.random() * 8),
+          liquid: isLiquidSpawn(),
+          x: Math.floor(COLS / 2) - Math.ceil(w / 2),
           y: -1
         };
         if (collides(current.matrix, current.x, current.y)) {
           gameOver = true;
-          showOverlay('Game Over', 'Press restart by refreshing the page.');
           paused = true;
+          showOverlay('Game Over', 'Tap New Game to start again.', false);
         }
       }
 
@@ -357,15 +377,44 @@
             if (!cell) return;
             const bx = current.x + x;
             const by = current.y + y;
-            if (by >= 0) board[by][bx] = current.color;
+            if (by >= 0) board[by][bx] = current.liquid ? -current.color : current.color;
           });
         });
+        if (current.liquid) settleLiquid();
+      }
+
+      function settleLiquid() {
+        let moved = true;
+        let safety = 0;
+        while (moved && safety < 80) {
+          moved = false;
+          safety++;
+          for (let y = ROWS - 2; y >= 0; y--) {
+            for (let x = 0; x < COLS; x++) {
+              if (board[y][x] >= 0 || board[y][x] === 0) continue;
+              if (board[y + 1][x] === 0) {
+                board[y + 1][x] = board[y][x];
+                board[y][x] = 0;
+                moved = true;
+              }
+            }
+          }
+        }
+        clearLiquidMarks();
+      }
+
+      function clearLiquidMarks() {
+        for (let y = 0; y < ROWS; y++) {
+          for (let x = 0; x < COLS; x++) {
+            if (board[y][x] < 0) board[y][x] = Math.abs(board[y][x]);
+          }
+        }
       }
 
       function clearLines() {
         let cleared = 0;
         for (let y = ROWS - 1; y >= 0; y--) {
-          if (board[y].every(v => v)) {
+          if (board[y].every(v => v !== 0)) {
             board.splice(y, 1);
             board.unshift(Array(COLS).fill(0));
             cleared++;
@@ -376,10 +425,14 @@
           lines += cleared;
           const points = [0, 100, 300, 500, 800][cleared] || (cleared * 250);
           score += points * level;
-          level = 1 + Math.floor(lines / 10);
-          dropInterval = Math.max(120, 800 - (level - 1) * 60);
+          updateDifficulty();
           updateHud();
         }
+      }
+
+      function updateDifficulty() {
+        level = 1 + Math.floor(score / 900) + Math.floor(lines / 8);
+        dropInterval = Math.max(85, 820 - Math.floor(score / 22) - (level - 1) * 35);
       }
 
       function rotateMatrix(matrix) {
@@ -395,6 +448,7 @@
       }
 
       function tryRotate() {
+        if (!current || paused) return false;
         const rotated = rotateMatrix(current.matrix);
         const kicks = [0, -1, 1, -2, 2];
         for (const kick of kicks) {
@@ -413,6 +467,8 @@
           current.x += dx;
           current.y += dy;
           if (dy > 0) score += 1;
+          updateDifficulty();
+          updateHud();
           return true;
         }
         return false;
@@ -426,6 +482,8 @@
           dist += 1;
         }
         score += dist * 2;
+        updateDifficulty();
+        updateHud();
         lockPiece();
       }
 
@@ -442,9 +500,12 @@
         levelEl.textContent = level;
       }
 
-      function showOverlay(title, text) {
+      function showOverlay(title, text, allowResume) {
         overlayTitle.textContent = title;
         overlayText.textContent = text;
+        overlayPrimary.textContent = allowResume ? 'Resume' : 'New Game';
+        overlayPrimary.style.display = 'inline-block';
+        overlayRestart.style.display = allowResume ? 'inline-block' : 'none';
         overlay.classList.add('show');
       }
 
@@ -456,7 +517,7 @@
         if (gameOver) return;
         paused = !paused;
         if (paused) {
-          showOverlay('Paused', 'Press Resume to continue.');
+          showOverlay('Paused', 'Tap Resume to continue.', true);
         } else {
           hideOverlay();
         }
@@ -476,28 +537,83 @@
 
       function setTouchMode(on) {
         touchMode = on;
-        touchBar.classList.toggle('show', on);
-        touchHint.textContent = on ? 'Touch mode: swipe left/right to move, swipe up to rotate, swipe down to drop. Buttons are hidden.' : 'Keyboard: Arrow keys / A D / W / S, Space to drop, P to pause.';
         desktopButtons.classList.toggle('hidden', on);
+        touchHint.textContent = on
+          ? 'Touch mode active: swipe left/right to move, swipe up to rotate, swipe down to drop. Buttons are hidden.'
+          : 'Keyboard: Arrow keys / A D / W / S, Space to drop, P to pause, R for new game.';
+        if (on) {
+          hideOverlay();
+          paused = false;
+          gameOver = false;
+        }
+        resizeCanvas();
       }
 
-      function drawCell(x, y, colorIndex, alpha = 1) {
+      function newGame() {
+        board.forEach(row => row.fill(0));
+        bag = [];
+        score = 0;
+        lines = 0;
+        level = 1;
+        dropInterval = 820;
+        paused = false;
+        gameOver = false;
+        nextDrop = 0;
+        updateHud();
+        hideOverlay();
+        spawnPiece();
+      }
+
+      function resizeCanvas() {
+        const wrap = gameWrap.getBoundingClientRect();
+        const availableW = Math.max(240, wrap.width - 2);
+        const availableH = Math.max(320, wrap.height - 2);
+        const targetRatio = COLS / ROWS;
+        let cssW = availableW;
+        let cssH = availableH;
+        if (cssW / cssH > targetRatio) {
+          cssW = cssH * targetRatio;
+        } else {
+          cssH = cssW / targetRatio;
+        }
+        canvas.style.width = `${Math.floor(cssW)}px`;
+        canvas.style.height = `${Math.floor(cssH)}px`;
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        canvas.width = Math.floor(cssW * dpr);
+        canvas.height = Math.floor(cssH * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cellSize = Math.floor(Math.min(cssW / COLS, cssH / ROWS));
+        boardW = cellSize * COLS;
+        boardH = cellSize * ROWS;
+        offsetX = Math.floor((cssW - boardW) / 2);
+        offsetY = Math.floor((cssH - boardH) / 2);
+      }
+
+      function drawCell(x, y, colorIndex, alpha = 1, liquid = false) {
         const palette = palettes[paletteIndex];
         const color = palette[(colorIndex - 1) % palette.length];
-        const px = x * BLOCK;
-        const py = y * BLOCK;
+        const px = offsetX + x * cellSize;
+        const py = offsetY + y * cellSize;
+        const size = cellSize;
         ctx.save();
         ctx.globalAlpha = alpha;
         ctx.fillStyle = color;
-        roundRect(px + 1, py + 1, BLOCK - 2, BLOCK - 2, 8);
+        roundRect(px + 1, py + 1, size - 2, size - 2, Math.max(6, size * 0.22));
         ctx.fill();
 
-        const grd = ctx.createLinearGradient(px, py, px + BLOCK, py + BLOCK);
-        grd.addColorStop(0, 'rgba(255,255,255,0.22)');
+        const grd = ctx.createLinearGradient(px, py, px + size, py + size);
+        grd.addColorStop(0, 'rgba(255,255,255,0.26)');
         grd.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.fillStyle = grd;
-        roundRect(px + 3, py + 3, BLOCK - 8, BLOCK - 8, 6);
+        roundRect(px + 2, py + 2, size - 6, size - 6, Math.max(5, size * 0.18));
         ctx.fill();
+
+        if (liquid) {
+          ctx.globalAlpha = 0.22;
+          ctx.fillStyle = '#ffffff';
+          roundRect(px + size * 0.2, py + size * 0.6, size * 0.6, size * 0.12, size * 0.08);
+          ctx.fill();
+        }
         ctx.restore();
       }
 
@@ -514,16 +630,31 @@
 
       function drawGrid() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(255,255,255,0.03)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        const bg = ctx.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, 'rgba(255,255,255,0.04)');
+        bg.addColorStop(1, 'rgba(255,255,255,0.02)');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        for (let y = 0; y < ROWS; y++) {
+          for (let x = 0; x < COLS; x++) {
+            const px = offsetX + x * cellSize;
+            const py = offsetY + y * cellSize;
+            ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            ctx.fillRect(px + 1, py + 1, cellSize - 2, cellSize - 2);
+          }
+        }
+        ctx.restore();
 
         for (let y = 0; y < ROWS; y++) {
           for (let x = 0; x < COLS; x++) {
-            if (board[y][x]) drawCell(x, y, board[y][x], 1);
-            else {
-              ctx.fillStyle = 'rgba(255,255,255,0.03)';
-              ctx.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2);
-            }
+            const cell = board[y][x];
+            if (!cell) continue;
+            drawCell(x, y, Math.abs(cell), 1, cell < 0);
           }
         }
 
@@ -533,47 +664,62 @@
               if (!cell) return;
               const bx = current.x + x;
               const by = current.y + y;
-              if (by >= 0) drawCell(bx, by, current.color, 1);
+              if (by >= 0) drawCell(bx, by, current.color, 1, current.liquid);
             });
           });
+        }
+      }
+
+      function settleBoard() {
+        let moved = true;
+        let safety = 0;
+        while (moved && safety < 120) {
+          moved = false;
+          safety++;
+          for (let y = ROWS - 2; y >= 0; y--) {
+            for (let x = 0; x < COLS; x++) {
+              if (board[y][x] >= 0 || board[y][x] === 0) continue;
+              if (board[y + 1][x] === 0) {
+                board[y + 1][x] = board[y][x];
+                board[y][x] = 0;
+                moved = true;
+              }
+            }
+          }
+        }
+        for (let y = 0; y < ROWS; y++) {
+          for (let x = 0; x < COLS; x++) {
+            if (board[y][x] < 0) board[y][x] = Math.abs(board[y][x]);
+          }
         }
       }
 
       function tick(time = 0) {
         const delta = time - lastTime;
         lastTime = time;
+        liquidPulse += delta;
         if (!paused && !gameOver) {
           nextDrop += delta;
           if (nextDrop > dropInterval) {
             nextDrop = 0;
             if (!move(0, 1)) lockPiece();
           }
+          if (liquidStorm) settleBoard();
         }
         if (touchMoveCooldown > 0) touchMoveCooldown = Math.max(0, touchMoveCooldown - delta);
         drawGrid();
         requestAnimationFrame(tick);
       }
 
-      function resetGame() {
-        board.forEach(row => row.fill(0));
-        bag = [];
-        score = 0;
-        lines = 0;
-        level = 1;
-        dropInterval = 800;
-        paused = false;
-        gameOver = false;
-        nextDrop = 0;
-        updateHud();
-        hideOverlay();
-        spawnPiece();
-      }
-
       function handleKey(e) {
-        if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','KeyA','KeyD','KeyS','KeyW','KeyP'].includes(e.code)) {
+        if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space','KeyA','KeyD','KeyS','KeyW','KeyP','KeyR'].includes(e.code)) {
           e.preventDefault();
         }
-        if (gameOver && e.code !== 'KeyP') return;
+        if (e.code === 'KeyR') {
+          newGame();
+          return;
+        }
+        if (gameOver && e.code !== 'KeyR') return;
         if (e.code === 'KeyP') { togglePause(); return; }
         if (paused) return;
         switch (e.code) {
@@ -582,24 +728,22 @@
           case 'ArrowRight':
           case 'KeyD': move(1, 0); break;
           case 'ArrowDown':
-          case 'KeyS': move(0, 1); score += 1; updateHud(); break;
+          case 'KeyS': move(0, 1); break;
           case 'ArrowUp':
           case 'KeyW': tryRotate(); break;
           case 'Space': hardDrop(); break;
         }
       }
 
-      function bindHoldButton(el, fn) {
+      function bindHoldButton(el, fn, repeatDelay = 150) {
         let interval = null;
         const start = (e) => {
           e.preventDefault();
           if (paused || gameOver) return;
           fn();
-          if (el.id === 'downBtn') {
-            interval = setInterval(() => { if (!paused && !gameOver) { move(0, 1); score += 1; updateHud(); } }, 90);
-          } else if (el.id === 'leftBtn' || el.id === 'rightBtn') {
-            interval = setInterval(() => { if (!paused && !gameOver) fn(); }, 120);
-          }
+          interval = setInterval(() => {
+            if (!paused && !gameOver) fn();
+          }, repeatDelay);
         };
         const end = () => {
           if (interval) clearInterval(interval);
@@ -611,80 +755,85 @@
         el.addEventListener('pointerleave', end);
       }
 
+      function getTouchPoint(e) {
+        const rect = canvas.getBoundingClientRect();
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      }
+
       bgBtn.addEventListener('click', toggleBackground);
       paletteBtn.addEventListener('click', togglePalette);
       pauseBtn.addEventListener('click', togglePause);
-      pauseBtnTouch.addEventListener('click', togglePause);
       touchBtn.addEventListener('click', () => setTouchMode(!touchMode));
-      leftBtn.addEventListener('click', () => move(-1, 0));
-      rightBtn.addEventListener('click', () => move(1, 0));
-      rotateBtn.addEventListener('click', () => tryRotate());
-      downBtn.addEventListener('click', () => { if (!paused && !gameOver) { move(0, 1); score += 1; updateHud(); } });
-      dropBtn.addEventListener('click', hardDrop);
+      overlayPrimary.addEventListener('click', () => {
+        if (gameOver) newGame();
+        else togglePause();
+      });
+      overlayRestart.addEventListener('click', newGame);
 
-      bindHoldButton(leftBtn, () => move(-1, 0));
-      bindHoldButton(rightBtn, () => move(1, 0));
-      bindHoldButton(downBtn, () => { move(0, 1); score += 1; updateHud(); });
+      bindHoldButton(document.createElement('button'), () => {});
 
       window.addEventListener('keydown', handleKey, { passive: false });
+      window.addEventListener('resize', resizeCanvas);
+      window.addEventListener('orientationchange', resizeCanvas);
 
       canvas.addEventListener('pointerdown', (e) => {
         if (!touchMode || paused || gameOver) return;
-        touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
-        touchLast = { x: e.clientX, y: e.clientY };
+        const p = getTouchPoint(e);
+        touchStart = { x: p.x, y: p.y, t: performance.now() };
+        gestureLocked = false;
         canvas.setPointerCapture(e.pointerId);
       });
 
       canvas.addEventListener('pointermove', (e) => {
-        if (!touchMode || !touchStart || paused || gameOver) return;
+        if (!touchMode || !touchStart || paused || gameOver || gestureLocked) return;
         if (touchMoveCooldown > 0) return;
-        const dx = e.clientX - touchLast.x;
-        const dy = e.clientY - touchLast.y;
-        const totalDx = e.clientX - touchStart.x;
-        const totalDy = e.clientY - touchStart.y;
-        const absX = Math.abs(totalDx);
-        const absY = Math.abs(totalDy);
+        const p = getTouchPoint(e);
+        const dx = p.x - touchStart.x;
+        const dy = p.y - touchStart.y;
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
 
-        if (Math.max(absX, absY) < 18) return;
+        const moveThreshold = Math.max(34, cellSize * 0.95);
+        const rotateThreshold = Math.max(58, cellSize * 1.7);
+        const dropThreshold = Math.max(64, cellSize * 2.0);
 
-        if (absX > absY) {
-          if (totalDx > 0) move(1, 0); else move(-1, 0);
-          touchMoveCooldown = 130;
-          touchLast = { x: e.clientX, y: e.clientY };
-          touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
-        } else {
-          if (totalDy < -24) {
-            tryRotate();
-          } else if (totalDy > 28) {
-            hardDrop();
-          }
+        if (absX >= moveThreshold && absX > absY * 1.25) {
+          move(dx > 0 ? 1 : -1, 0);
+          gestureLocked = true;
           touchMoveCooldown = 180;
-          touchLast = { x: e.clientX, y: e.clientY };
-          touchStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+          return;
+        }
+
+        if (dy <= -rotateThreshold && absY > absX * 1.15) {
+          tryRotate();
+          gestureLocked = true;
+          touchMoveCooldown = 220;
+          return;
+        }
+
+        if (dy >= dropThreshold && absY > absX * 1.05) {
+          hardDrop();
+          gestureLocked = true;
+          touchMoveCooldown = 240;
+          return;
         }
       });
 
-      canvas.addEventListener('pointerup', (e) => {
-        if (!touchMode || !touchStart || paused || gameOver) return;
-        const dx = e.clientX - touchStart.x;
-        const dy = e.clientY - touchStart.y;
-        const elapsed = performance.now() - touchStart.t;
-        if (elapsed < 220 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-          tryRotate();
-        }
+      canvas.addEventListener('pointerup', () => {
         touchStart = null;
-        touchLast = null;
+        gestureLocked = false;
       });
 
       canvas.addEventListener('pointercancel', () => {
         touchStart = null;
-        touchLast = null;
+        gestureLocked = false;
       });
 
       setTouchMode(false);
       toggleBackground();
+      resizeCanvas();
       updateHud();
-      spawnPiece();
+      newGame();
       requestAnimationFrame(tick);
     })();
   </script>
